@@ -1,0 +1,33 @@
+#This script assumes you have located the installer at c:\ppakinstaller on the REMOTE server.
+
+
+
+
+#Searches AD OU for your list of servers. Adjust to your needs
+$servers = Get-ADComputer -filter * -SearchBase "OU=RDS Farm,OU=Servers,OU=CHC Servers and Computers,dc=mycompany,dc=local"
+
+#Displays the list of servers and ask the user if they wish to proceed
+Write-Host "The list of servers you are choosing to install upon is:" $servers.Name
+$confirmation = Read-Host "Do you wish to proceed? Y=Yes"
+
+if ($confirmation -eq 'y')
+{
+    ForEach($server in $servers.Name)
+    {
+    Invoke-Command -ComputerName $server -ScriptBlock {
+    change user /install
+    #Uncomment whichever installation package you need. Either .msi or .exe installers. Adjust directories/files as needed
+    #msiexec.exe /i c:\ppakinstaller\outlookplugin.msi /qn
+    #c:\ppakinstaller\horizon\client\horizon.exe /silent /install /norestart
+    #I use this artifical wait timer to allow the software to finish installing. Use whatever you deem necessary
+    start-sleep -s 60
+    change user /execute
+    }
+    #Uncomment this if you want it to reboot server after installation
+    #Restart-Computer -ComputerName $server -Force
+    }
+}
+else
+{
+Write-Host "Install CANCELED by user"
+}
